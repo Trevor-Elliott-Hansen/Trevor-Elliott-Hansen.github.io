@@ -786,6 +786,10 @@ footer p {
     grid-template-columns: 1fr;
   }
 
+  .edu-logo {
+    display: none;
+  }
+
   .edu-degrees {
     flex-direction: column;
     gap: 4px;
