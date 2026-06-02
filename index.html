@@ -26,8 +26,8 @@
       </div>
       <div class="nav-links">
         <a href="#experience">Experience</a>
+        <a href="#project">Project</a>
         <a href="#skills">Skills</a>
-        <a href="#projects">Projects</a>
         <a href="#education">Education</a>
         <a href="#contact">Contact</a>
       </div>
@@ -181,6 +181,194 @@
     </div>
   </section>
 
+  <!-- FEATURED PROJECT -->
+  <section class="section" id="project">
+    <h2 class="section-title reveal">Featured Project</h2>
+
+    <!-- Header -->
+    <div class="fp-header reveal">
+      <div class="fp-header-top">
+        <h3 class="fp-name">tpch-snowflake-dbt</h3>
+        <span class="fp-ci-badge"><span class="fp-ci-dot"></span> CI passing</span>
+      </div>
+      <p class="fp-pitch">A production-style analytics warehouse built on Snowflake's 1.5M-order TPC-H dataset — a Kimball star schema, SCD Type 2 history, a MetricFlow semantic layer, and CI-linted dbt. Engineered to demonstrate end-to-end analytics engineering, not tutorial completion.</p>
+      <div class="fp-pills">
+        <span class="pill">dbt Core 1.11</span>
+        <span class="pill">Snowflake</span>
+        <span class="pill">MetricFlow</span>
+        <span class="pill">GitHub Actions</span>
+        <span class="pill">sqlfluff</span>
+      </div>
+      <div class="fp-cta">
+        <a href="https://github.com/Trevor-Elliott-Hansen/tpch-snowflake-dbt" target="_blank" rel="noopener noreferrer" class="btn-primary">View on GitHub</a>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="fp-stats reveal" data-count-group>
+      <div class="fp-stat">
+        <div class="count-num" data-target="1500000">0</div>
+        <div class="fp-stat-label">Orders Modeled</div>
+      </div>
+      <div class="fp-stat">
+        <div class="count-num" data-target="16">0</div>
+        <div class="fp-stat-label">Semantic Metrics</div>
+      </div>
+      <div class="fp-stat">
+        <div class="count-num" data-target="100" data-suffix="+">0</div>
+        <div class="fp-stat-label">Data Quality Tests</div>
+      </div>
+      <div class="fp-stat">
+        <div class="count-num" data-target="8">0</div>
+        <div class="fp-stat-label">PR-Reviewed Branches</div>
+      </div>
+      <div class="fp-stat">
+        <div class="count-num" data-target="0">0</div>
+        <div class="fp-stat-label">Lint Violations</div>
+      </div>
+    </div>
+
+    <!-- Lineage -->
+    <div class="fp-block reveal">
+      <h4 class="fp-block-title">Pipeline Lineage</h4>
+      <p class="fp-block-sub">Click any model to inspect its purpose, row count, SQL, and tests.</p>
+      <div class="fp-lineage" id="fp-lineage" role="tablist" aria-label="dbt pipeline models">
+        <div class="fp-col">
+          <div class="fp-col-label">Source</div>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="src_tpch" aria-controls="fp-lineage-panel" aria-selected="false">TPCH_SF1</button>
+        </div>
+        <div class="fp-arrow" aria-hidden="true"></div>
+        <div class="fp-col">
+          <div class="fp-col-label">Staging</div>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="stg_orders" aria-controls="fp-lineage-panel" aria-selected="false">stg_tpch__orders</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="stg_lineitems" aria-controls="fp-lineage-panel" aria-selected="false">stg_tpch__lineitems</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="stg_customers" aria-controls="fp-lineage-panel" aria-selected="false">stg_tpch__customers</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="stg_suppliers" aria-controls="fp-lineage-panel" aria-selected="false">stg_tpch__suppliers</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="stg_parts" aria-controls="fp-lineage-panel" aria-selected="false">stg_tpch__parts</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="stg_nations" aria-controls="fp-lineage-panel" aria-selected="false">stg_tpch__nations</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="stg_regions" aria-controls="fp-lineage-panel" aria-selected="false">stg_tpch__regions</button>
+        </div>
+        <div class="fp-arrow" aria-hidden="true"></div>
+        <div class="fp-col">
+          <div class="fp-col-label">Intermediate</div>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="int_orders" aria-controls="fp-lineage-panel" aria-selected="false">int_orders_with_line_items</button>
+        </div>
+        <div class="fp-arrow" aria-hidden="true"></div>
+        <div class="fp-col">
+          <div class="fp-col-label">Core · dims</div>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="dim_customer" aria-controls="fp-lineage-panel" aria-selected="false">dim_customer</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="dim_supplier" aria-controls="fp-lineage-panel" aria-selected="false">dim_supplier</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="dim_part" aria-controls="fp-lineage-panel" aria-selected="false">dim_part</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="dim_customer_history" aria-controls="fp-lineage-panel" aria-selected="false">dim_customer_history</button>
+        </div>
+        <div class="fp-arrow" aria-hidden="true"></div>
+        <div class="fp-col">
+          <div class="fp-col-label">Finance · facts</div>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="fct_orders" aria-controls="fp-lineage-panel" aria-selected="false">fct_orders</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="fct_order_items" aria-controls="fp-lineage-panel" aria-selected="false">fct_order_items</button>
+        </div>
+        <div class="fp-arrow" aria-hidden="true"></div>
+        <div class="fp-col">
+          <div class="fp-col-label">Semantic</div>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="sem_order_items" aria-controls="fp-lineage-panel" aria-selected="false">sem_order_items</button>
+          <button class="fp-node fp-tab" role="tab" data-fp-key="sem_customers" aria-controls="fp-lineage-panel" aria-selected="false">sem_customers</button>
+        </div>
+      </div>
+      <div class="fp-utils-lane">
+        <span class="fp-col-label">Utilities</span>
+        <button class="fp-node fp-tab" role="tab" data-fp-key="dim_dates" aria-controls="fp-lineage-panel" aria-selected="false">dim_dates</button>
+        <button class="fp-node fp-tab" role="tab" data-fp-key="seed_customer_changes" aria-controls="fp-lineage-panel" aria-selected="false">customer_changes_simulated</button>
+        <button class="fp-node fp-tab" role="tab" data-fp-key="snap_customer" aria-controls="fp-lineage-panel" aria-selected="false">customer_snapshot</button>
+      </div>
+      <div class="fp-node-detail" id="fp-lineage-panel" role="region" aria-live="polite" tabindex="-1"></div>
+    </div>
+
+    <!-- Semantic centerpiece -->
+    <div class="fp-block fp-block-feature reveal">
+      <h4 class="fp-block-title">The Semantic Layer — Cross-Entity Auto-Joins</h4>
+      <p class="fp-block-sub">Two semantic models declare an entity named <code>customer</code>. Because the name matches, MetricFlow resolves the join automatically — no hand-written SQL JOIN.</p>
+      <div class="fp-models">
+        <div class="fp-model">
+          <div class="fp-model-name">sem_order_items</div>
+          <div class="fp-model-meta">wraps fct_order_items · line-item grain</div>
+          <div class="fp-model-entities">
+            <span class="fp-entity">order_item <em>primary</em></span>
+            <span class="fp-entity fp-entity-link">customer <em>foreign</em></span>
+            <span class="fp-entity">order</span>
+            <span class="fp-entity">supplier</span>
+            <span class="fp-entity">part</span>
+          </div>
+        </div>
+        <div class="fp-model">
+          <div class="fp-model-name">sem_customers</div>
+          <div class="fp-model-meta">wraps dim_customer</div>
+          <div class="fp-model-entities">
+            <span class="fp-entity fp-entity-link">customer <em>primary</em></span>
+          </div>
+          <div class="fp-model-dims">dimensions: market_segment · nation_name · region_name</div>
+        </div>
+      </div>
+      <div class="fp-cli">
+        <pre><code>mf query \
+  --metrics total_net_revenue,total_orders,avg_order_value \
+  --group-by <span class="fp-cli-dim" id="fp-cli-dim">customer__region_name</span></code></pre>
+      </div>
+      <div class="fp-dim-toggle" id="fp-semantic-toggle" role="tablist" aria-label="Group-by dimension">
+        <button class="fp-tab" role="tab" data-fp-key="region" aria-controls="fp-semantic-panel" aria-selected="false">customer__region_name</button>
+        <button class="fp-tab" role="tab" data-fp-key="segment" aria-controls="fp-semantic-panel" aria-selected="false">customer__market_segment</button>
+      </div>
+      <div class="fp-result" id="fp-semantic-panel" role="region" aria-live="polite" tabindex="-1"></div>
+      <div class="fp-callout">No JOIN written — MetricFlow discovered <code>fct_order_items.customer_key → dim_customer.customer_key</code> through the shared <code>customer</code> entity. Define a metric once, slice it by any dimension from any joinable model.</div>
+    </div>
+
+    <!-- SQL playground -->
+    <div class="fp-block reveal">
+      <h4 class="fp-block-title">Ask a Business Question</h4>
+      <p class="fp-block-sub">Each question reveals the SQL, the models it touches, and the concept behind the answer.</p>
+      <div class="fp-playground">
+        <div class="fp-questions" id="fp-playground-list" role="tablist" aria-orientation="vertical" aria-label="Business questions">
+          <button class="fp-question fp-tab" role="tab" data-fp-key="region" aria-controls="fp-playground-panel" aria-selected="false">What's our revenue by region?</button>
+          <button class="fp-question fp-tab" role="tab" data-fp-key="top_customers" aria-controls="fp-playground-panel" aria-selected="false">Which customers buy the most?</button>
+          <button class="fp-question fp-tab" role="tab" data-fp-key="return_rate" aria-controls="fp-playground-panel" aria-selected="false">What's our return rate by part category?</button>
+          <button class="fp-question fp-tab" role="tab" data-fp-key="segment_history" aria-controls="fp-playground-panel" aria-selected="false">How has a customer's segment changed over time?</button>
+        </div>
+        <div class="fp-answer" id="fp-playground-panel" role="region" aria-live="polite" tabindex="-1"></div>
+      </div>
+    </div>
+
+    <!-- SCD2 callout -->
+    <div class="fp-block reveal">
+      <h4 class="fp-block-title">Debugging Story — SCD Type 2</h4>
+      <p class="fp-block-sub">My first snapshot used the <code>timestamp</code> strategy against a history feed, and every version came back marked current. The fix: the <code>check</code> strategy against a current-state seed.</p>
+      <div class="fp-scd2">
+        <div class="fp-scd2-card">
+          <div class="fp-scd2-head"><span class="fp-scd2-tag fp-bad">Before · timestamp strategy</span></div>
+          <table class="fp-result-table">
+            <thead><tr><th scope="col">customer</th><th scope="col">segment</th><th scope="col">is_current</th></tr></thead>
+            <tbody>
+              <tr><td>C_1001</td><td>AUTOMOBILE</td><td class="fp-cell-bad">TRUE</td></tr>
+              <tr><td>C_1001</td><td>BUILDING</td><td class="fp-cell-bad">TRUE</td></tr>
+              <tr><td>C_1001</td><td>MACHINERY</td><td class="fp-cell-bad">TRUE</td></tr>
+            </tbody>
+          </table>
+          <div class="fp-scd2-note">Every version flagged current — point-in-time joins fan out.</div>
+        </div>
+        <div class="fp-scd2-card">
+          <div class="fp-scd2-head"><span class="fp-scd2-tag fp-good">After · check strategy</span></div>
+          <table class="fp-result-table">
+            <thead><tr><th scope="col">customer</th><th scope="col">segment</th><th scope="col">valid_to</th><th scope="col">is_current</th></tr></thead>
+            <tbody>
+              <tr><td>C_1001</td><td>AUTOMOBILE</td><td>2024-03-01</td><td>FALSE</td></tr>
+              <tr><td>C_1001</td><td>BUILDING</td><td>2025-07-01</td><td>FALSE</td></tr>
+              <tr><td>C_1001</td><td>MACHINERY</td><td>—</td><td class="fp-cell-good">TRUE</td></tr>
+            </tbody>
+          </table>
+          <div class="fp-scd2-note">Exactly one current row; prior versions closed with validity windows.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- TECH STACK -->
   <section class="section" id="skills">
     <h2 class="section-title reveal">Tech Stack</h2>
@@ -249,22 +437,6 @@
           <span class="skill-pill">Demand Generation</span>
           <span class="skill-pill">Enterprise Sales & Marketing</span>
           <span class="skill-pill">E-commerce / Retail</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PROJECTS -->
-  <section class="section" id="projects">
-    <h2 class="section-title reveal">Projects</h2>
-    <div class="projects-grid">
-      <div class="project-card coming-soon reveal">
-        <div class="project-placeholder">
-          <div class="project-placeholder-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          </div>
-          <p class="project-placeholder-text">Projects coming soon</p>
-          <p class="project-placeholder-sub">Check back for data analysis case studies, dashboard demos, and SQL projects.</p>
         </div>
       </div>
     </div>
