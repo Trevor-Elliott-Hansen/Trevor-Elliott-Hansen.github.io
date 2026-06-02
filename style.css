@@ -885,6 +885,7 @@ footer p {
 
 .fp-detail-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 10px;
   margin-top: 10px;
