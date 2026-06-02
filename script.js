@@ -350,6 +350,6 @@ function renderPlayground(key, data, panel) {
 }
 
 // Wire up the three tab groups
-initTabGroup(document.getElementById('fp-lineage'), LINEAGE, renderLineage, document.getElementById('fp-lineage-panel'), 'sem_order_items');
+initTabGroup(document.getElementById('fp-lineage-block'), LINEAGE, renderLineage, document.getElementById('fp-lineage-panel'), 'sem_order_items');
 initTabGroup(document.getElementById('fp-semantic-toggle'), SEMANTIC_RESULTS, renderSemanticResult, document.getElementById('fp-semantic-panel'), 'region');
 initTabGroup(document.getElementById('fp-playground-list'), PLAYGROUND, renderPlayground, document.getElementById('fp-playground-panel'), 'region');

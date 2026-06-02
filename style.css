@@ -857,6 +857,7 @@ footer p {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .fp-detail-name {
@@ -864,6 +865,8 @@ footer p {
   font-weight: 500;
   font-size: 0.95rem;
   color: var(--accent);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .fp-detail-rows {
@@ -900,6 +903,7 @@ footer p {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
 }
 
 /* Semantic models */
@@ -915,6 +919,7 @@ footer p {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
+  min-width: 0;
 }
 
 .fp-model-name {
@@ -1046,6 +1051,7 @@ footer p {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .fp-question {
@@ -1077,6 +1083,7 @@ footer p {
   border-radius: var(--radius);
   padding: 18px;
   min-height: 120px;
+  min-width: 0;
 }
 
 .fp-concept {
@@ -1099,6 +1106,11 @@ footer p {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
+  min-width: 0;
+}
+
+.fp-table-wrap {
+  overflow-x: auto;
 }
 
 .fp-scd2-head {
@@ -1291,8 +1303,31 @@ footer p {
     display: none;
   }
 
+  .fp-block {
+    padding: 18px;
+  }
+
+  .fp-block pre {
+    overflow-x: visible;
+  }
+
+  .fp-block pre code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 0.72rem;
+  }
+
   .fp-stats {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .fp-stat {
+    padding: 18px 12px;
+  }
+
+  .fp-stat .count-num {
+    font-size: 1.7rem;
   }
 
   .fp-lineage {
@@ -1318,6 +1353,23 @@ footer p {
 
   .fp-scd2 {
     grid-template-columns: 1fr;
+  }
+
+  .fp-result-table {
+    font-size: 0.74rem;
+  }
+
+  .fp-result-table th,
+  .fp-result-table td {
+    padding: 6px 8px;
+  }
+
+  .fp-detail-label {
+    flex: 0 0 100%;
+  }
+
+  .fp-detail-rows {
+    white-space: normal;
   }
 }
 

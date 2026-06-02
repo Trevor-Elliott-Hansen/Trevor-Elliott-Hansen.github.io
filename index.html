@@ -229,7 +229,7 @@
     </div>
 
     <!-- Lineage -->
-    <div class="fp-block reveal">
+    <div class="fp-block reveal" id="fp-lineage-block">
       <h4 class="fp-block-title">Pipeline Lineage</h4>
       <p class="fp-block-sub">Click any model to inspect its purpose, row count, SQL, and tests.</p>
       <div class="fp-lineage" id="fp-lineage" role="tablist" aria-label="dbt pipeline models">
@@ -343,26 +343,30 @@
       <div class="fp-scd2">
         <div class="fp-scd2-card">
           <div class="fp-scd2-head"><span class="fp-scd2-tag fp-bad">Before · timestamp strategy</span></div>
-          <table class="fp-result-table">
-            <thead><tr><th scope="col">customer</th><th scope="col">segment</th><th scope="col">is_current</th></tr></thead>
-            <tbody>
-              <tr><td>C_1001</td><td>AUTOMOBILE</td><td class="fp-cell-bad">TRUE</td></tr>
-              <tr><td>C_1001</td><td>BUILDING</td><td class="fp-cell-bad">TRUE</td></tr>
-              <tr><td>C_1001</td><td>MACHINERY</td><td class="fp-cell-bad">TRUE</td></tr>
-            </tbody>
-          </table>
+          <div class="fp-table-wrap">
+            <table class="fp-result-table">
+              <thead><tr><th scope="col">customer</th><th scope="col">segment</th><th scope="col">is_current</th></tr></thead>
+              <tbody>
+                <tr><td>C_1001</td><td>AUTOMOBILE</td><td class="fp-cell-bad">TRUE</td></tr>
+                <tr><td>C_1001</td><td>BUILDING</td><td class="fp-cell-bad">TRUE</td></tr>
+                <tr><td>C_1001</td><td>MACHINERY</td><td class="fp-cell-bad">TRUE</td></tr>
+              </tbody>
+            </table>
+          </div>
           <div class="fp-scd2-note">Every version flagged current — point-in-time joins fan out.</div>
         </div>
         <div class="fp-scd2-card">
           <div class="fp-scd2-head"><span class="fp-scd2-tag fp-good">After · check strategy</span></div>
-          <table class="fp-result-table">
-            <thead><tr><th scope="col">customer</th><th scope="col">segment</th><th scope="col">valid_to</th><th scope="col">is_current</th></tr></thead>
-            <tbody>
-              <tr><td>C_1001</td><td>AUTOMOBILE</td><td>2024-03-01</td><td>FALSE</td></tr>
-              <tr><td>C_1001</td><td>BUILDING</td><td>2025-07-01</td><td>FALSE</td></tr>
-              <tr><td>C_1001</td><td>MACHINERY</td><td>—</td><td class="fp-cell-good">TRUE</td></tr>
-            </tbody>
-          </table>
+          <div class="fp-table-wrap">
+            <table class="fp-result-table">
+              <thead><tr><th scope="col">customer</th><th scope="col">segment</th><th scope="col">valid_to</th><th scope="col">is_current</th></tr></thead>
+              <tbody>
+                <tr><td>C_1001</td><td>AUTOMOBILE</td><td>2024-03-01</td><td>FALSE</td></tr>
+                <tr><td>C_1001</td><td>BUILDING</td><td>2025-07-01</td><td>FALSE</td></tr>
+                <tr><td>C_1001</td><td>MACHINERY</td><td>—</td><td class="fp-cell-good">TRUE</td></tr>
+              </tbody>
+            </table>
+          </div>
           <div class="fp-scd2-note">Exactly one current row; prior versions closed with validity windows.</div>
         </div>
       </div>
