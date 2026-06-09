@@ -186,6 +186,41 @@ nav {
   align-items: start;
 }
 
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  background: var(--accent-light);
+  border: 1px solid rgba(3, 87, 74, 0.2);
+  border-radius: 100px;
+  padding: 6px 14px;
+  margin-bottom: 22px;
+  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.hero-chip:hover {
+  background: #d8e7e3;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.hero-chip-tag {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 100px;
+  padding: 2px 8px;
+}
+
+.hero-chip-arrow {
+  font-size: 0.8rem;
+}
+
 .hero-eyebrow {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.75rem;
@@ -1247,6 +1282,12 @@ footer p {
 
   .hero p {
     font-size: 1rem;
+  }
+
+  .hero-chip {
+    flex-wrap: wrap;
+    border-radius: 14px;
+    font-size: 0.66rem;
   }
 
   .hero-buttons {
