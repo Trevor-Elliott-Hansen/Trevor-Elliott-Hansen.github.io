@@ -349,6 +349,25 @@ function renderPlayground(key, data, panel) {
     '<p class="fp-concept">' + fpEsc(d.concept) + '</p>';
 }
 
+// ========================================
+// ANALYTICS — CTA click events (GA4)
+// ========================================
+function trackCta(selector, eventName) {
+  document.querySelectorAll(selector).forEach(function (el) {
+    el.addEventListener('click', function () {
+      if (typeof gtag === 'function') {
+        gtag('event', eventName, { link_text: el.textContent.trim().slice(0, 60) });
+      }
+    });
+  });
+}
+
+trackCta('.hero-chip', 'hero_chip_click');
+trackCta('.hero-buttons a[href="#project"]', 'hero_project_cta_click');
+trackCta('.fp-cta a', 'github_repo_click');
+trackCta('a[href*="linkedin.com"]', 'linkedin_click');
+trackCta('#contact a[href^="mailto"]', 'email_click');
+
 // Wire up the three tab groups
 initTabGroup(document.getElementById('fp-lineage-block'), LINEAGE, renderLineage, document.getElementById('fp-lineage-panel'), 'sem_order_items');
 initTabGroup(document.getElementById('fp-semantic-toggle'), SEMANTIC_RESULTS, renderSemanticResult, document.getElementById('fp-semantic-panel'), 'region');
