@@ -208,7 +208,7 @@ nav {
 }
 
 .hero-chip-tag {
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   background: var(--accent);
@@ -446,7 +446,7 @@ nav {
 
 .pill {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   background: var(--accent-light);
   padding: 4px 10px;
   border-radius: 4px;
@@ -736,7 +736,7 @@ footer p {
 
 .fp-stat-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.66rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
@@ -774,7 +774,8 @@ footer p {
   max-width: 760px;
 }
 
-.fp-block code {
+.fp-block code,
+.fp-sheet-content code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.85em;
   background: var(--accent-light);
@@ -784,7 +785,8 @@ footer p {
 }
 
 /* Code blocks */
-.fp-block pre {
+.fp-block pre,
+.fp-sheet-content pre {
   background: #0d1f1b;
   border-radius: var(--radius);
   padding: 16px 18px;
@@ -792,7 +794,8 @@ footer p {
   margin: 0 0 16px;
 }
 
-.fp-block pre code {
+.fp-block pre code,
+.fp-sheet-content pre code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
   line-height: 1.6;
@@ -821,7 +824,7 @@ footer p {
 
 .fp-col-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
@@ -928,7 +931,7 @@ footer p {
 
 .fp-detail-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
@@ -1189,10 +1192,98 @@ footer p {
   margin-top: 12px;
 }
 
-/* Shared focus state for interactive widgets */
-.fp-tab:focus-visible {
+/* Shared focus state for all interactive elements */
+a:focus-visible,
+button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ========================================
+   MOBILE LINEAGE BOTTOM SHEET
+   ======================================== */
+.fp-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.fp-sheet-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.fp-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 201;
+  background: var(--card);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  visibility: hidden;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0s linear 0.3s;
+}
+
+.fp-sheet.open {
+  transform: translateY(0);
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.fp-sheet-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 10px 16px;
+}
+
+.fp-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.fp-sheet-close {
+  position: absolute;
+  right: 8px;
+  top: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: var(--text-muted);
+}
+
+.fp-sheet-content {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 18px calc(18px + env(safe-area-inset-bottom));
+}
+
+body.fp-sheet-lock {
+  overflow: hidden;
+}
+
+@media (min-width: 769px) {
+  .fp-sheet,
+  .fp-sheet-backdrop {
+    display: none;
+  }
 }
 
 /* ========================================
@@ -1349,11 +1440,13 @@ footer p {
     padding: 18px;
   }
 
-  .fp-block pre {
+  .fp-block pre,
+  .fp-sheet-content pre {
     overflow-x: visible;
   }
 
-  .fp-block pre code {
+  .fp-block pre code,
+  .fp-sheet-content pre code {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     font-size: 0.72rem;
@@ -1372,21 +1465,71 @@ footer p {
     font-size: 1.7rem;
   }
 
+  /* Lineage: layers become labeled horizontal chip rows; details open in the bottom sheet */
   .fp-lineage {
     flex-direction: column;
     align-items: stretch;
     overflow-x: visible;
+    gap: 14px;
   }
 
   .fp-col {
+    flex-direction: row;
+    align-items: center;
     min-width: 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fp-col-label {
+    flex: 0 0 auto;
+    position: sticky;
+    left: 0;
+    background: var(--card);
+    padding-right: 8px;
+    margin-bottom: 0;
+  }
+
+  .fp-node {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .fp-arrow {
-    align-self: center;
-    width: auto;
-    height: 16px;
-    transform: rotate(90deg);
+    display: none;
+  }
+
+  .fp-utils-lane {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fp-node-detail {
+    display: none;
+  }
+
+  /* Touch targets */
+  .fp-node,
+  .fp-dim-toggle .fp-tab,
+  .fp-question,
+  .btn-primary,
+  .btn-outline {
+    min-height: 44px;
+  }
+
+  .fp-node,
+  .fp-dim-toggle .fp-tab {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .fp-models {
@@ -1423,6 +1566,11 @@ footer p {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+
+  .fp-sheet,
+  .fp-sheet-backdrop {
+    transition: none;
   }
 
   .status-dot,

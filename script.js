@@ -9,6 +9,9 @@ window.addEventListener('scroll', () => {
   lastScrollY = window.scrollY;
 }, { passive: true });
 
+const revealMobileMQ = window.matchMedia('(max-width: 768px)');
+const revealTimers = new WeakMap();
+
 const revealObserver = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
@@ -22,11 +25,17 @@ const revealObserver = new IntersectionObserver(
         entry.target.classList.remove('from-above', 'from-below');
         entry.target.classList.add(scrollDirection === 'up' ? 'from-above' : 'from-below');
 
-        setTimeout(() => {
+        clearTimeout(revealTimers.get(entry.target));
+        revealTimers.set(entry.target, setTimeout(() => {
           entry.target.classList.add('visible');
-        }, delay);
+        }, delay));
       } else {
-        entry.target.classList.remove('visible');
+        clearTimeout(revealTimers.get(entry.target));
+        revealTimers.delete(entry.target);
+        // Reversible parallax on desktop; one-time reveals on mobile
+        if (!revealMobileMQ.matches) {
+          entry.target.classList.remove('visible');
+        }
       }
     });
   },
@@ -62,10 +71,19 @@ if (metricsEl) {
 }
 
 function animateMetrics() {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   document.querySelectorAll('.metric-number').forEach((el) => {
     const target = parseInt(el.dataset.target, 10);
     const prefix = el.dataset.prefix || '';
     const suffix = el.dataset.suffix || '';
+    const fmt = (n) => prefix + (n >= 1000 ? n.toLocaleString() : n.toString()) + suffix;
+
+    if (reduce) {
+      el.textContent = fmt(target);
+      return;
+    }
+
     const duration = 1200;
     const startTime = performance.now();
 
@@ -74,14 +92,7 @@ function animateMetrics() {
       const progress = Math.min(elapsed / duration, 1);
       // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.round(eased * target);
-
-      // Format with commas for numbers >= 1000
-      const formatted = current >= 1000
-        ? current.toLocaleString()
-        : current.toString();
-
-      el.textContent = prefix + formatted + suffix;
+      el.textContent = fmt(Math.round(eased * target));
 
       if (progress < 1) {
         requestAnimationFrame(update);
@@ -100,19 +111,20 @@ const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
 
 const spyObserver = new IntersectionObserver(
   (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        const id = entry.target.id;
-        navLinks.forEach((link) => {
-          link.classList.toggle(
-            'active',
-            link.getAttribute('href') === `#${id}`
-          );
-        });
-      }
+    const visible = entries.filter((e) => e.isIntersecting);
+    if (!visible.length) return;
+    // When several sections enter the band in one tick, highlight the one
+    // lowest on screen — the section the user just scrolled to. Threshold 0
+    // ensures short sections (Education) still register.
+    const best = visible.reduce((a, b) =>
+      a.boundingClientRect.top > b.boundingClientRect.top ? a : b
+    );
+    const id = best.target.id;
+    navLinks.forEach((link) => {
+      link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
     });
   },
-  { threshold: 0.2, rootMargin: '-72px 0px -50% 0px' }
+  { threshold: 0, rootMargin: '-72px 0px -60% 0px' }
 );
 
 sections.forEach((section) => {
@@ -195,7 +207,7 @@ function initTabGroup(rootEl, data, renderFn, panelEl, defaultKey) {
   const tabs = Array.from(rootEl.querySelectorAll('.fp-tab'));
   if (!tabs.length) return;
 
-  function select(tab, focusTab) {
+  function select(tab, focusTab, isInit) {
     tabs.forEach((t) => {
       const sel = t === tab;
       t.setAttribute('aria-selected', sel ? 'true' : 'false');
@@ -204,6 +216,11 @@ function initTabGroup(rootEl, data, renderFn, panelEl, defaultKey) {
     });
     renderFn(tab.dataset.fpKey, data, panelEl);
     if (focusTab) tab.focus();
+    // Gently bring a partially clipped panel into view on pointer selections
+    // (no-op when fully visible or when the panel is display:none)
+    if (!focusTab && !isInit) {
+      panelEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
   }
 
   tabs.forEach((tab, i) => {
@@ -223,7 +240,7 @@ function initTabGroup(rootEl, data, renderFn, panelEl, defaultKey) {
   });
 
   const initTab = (defaultKey && tabs.find((t) => t.dataset.fpKey === defaultKey)) || tabs[0];
-  select(initTab, false);
+  select(initTab, false, true);
 }
 
 function fpEsc(s) {
@@ -368,7 +385,89 @@ trackCta('.fp-cta a', 'github_repo_click');
 trackCta('a[href*="linkedin.com"]', 'linkedin_click');
 trackCta('#contact a[href^="mailto"]', 'email_click');
 
+// ========================================
+// MOBILE BOTTOM SHEET — lineage details
+// ========================================
+const fpSheet = document.getElementById('fp-sheet');
+const fpSheetBackdrop = document.getElementById('fp-sheet-backdrop');
+const fpSheetClose = document.getElementById('fp-sheet-close');
+const fpSheetContent = document.getElementById('fp-sheet-content');
+const fpMobileMQ = window.matchMedia('(max-width: 768px)');
+
+let fpSheetTrigger = null; // focus restore target
+let fpSheetWanted = false; // set by pointer click, consumed by the render wrapper
+
+function fpSheetKeydown(e) {
+  if (e.key === 'Escape') closeFpSheet();
+}
+
+function fpSheetFocusGuard(e) {
+  if (fpSheet.classList.contains('open') && !fpSheet.contains(e.target)) {
+    fpSheetClose.focus();
+  }
+}
+
+function openFpSheet(trigger) {
+  fpSheetTrigger = trigger;
+  fpSheet.classList.add('open');
+  fpSheetBackdrop.classList.add('open');
+  document.body.classList.add('fp-sheet-lock');
+  document.addEventListener('keydown', fpSheetKeydown);
+  document.addEventListener('focusin', fpSheetFocusGuard);
+  fpSheetClose.focus();
+}
+
+function closeFpSheet() {
+  fpSheet.classList.remove('open');
+  fpSheetBackdrop.classList.remove('open');
+  document.body.classList.remove('fp-sheet-lock');
+  document.removeEventListener('keydown', fpSheetKeydown);
+  document.removeEventListener('focusin', fpSheetFocusGuard);
+  if (fpSheetTrigger) {
+    fpSheetTrigger.focus();
+    fpSheetTrigger = null;
+  }
+}
+
+if (fpSheet) {
+  fpSheetClose.addEventListener('click', closeFpSheet);
+  fpSheetBackdrop.addEventListener('click', closeFpSheet);
+  fpMobileMQ.addEventListener('change', (e) => {
+    if (!e.matches) closeFpSheet();
+  });
+}
+
+// Capture-phase delegated listener: records the trigger BEFORE the tab's own
+// click handler runs select() -> renderFn, and fires the GA engagement event.
+const fpLineageBlock = document.getElementById('fp-lineage-block');
+if (fpLineageBlock) {
+  fpLineageBlock.addEventListener('click', (e) => {
+    const btn = e.target.closest('.fp-node');
+    if (!btn) return;
+    fpSheetWanted = true;
+    fpSheetTrigger = btn;
+    if (typeof gtag === 'function') {
+      gtag('event', 'fp_node_click', {
+        model_key: btn.dataset.fpKey,
+        model_name: btn.textContent.trim()
+      });
+    }
+  }, true);
+}
+
+// Render wrapper: desktop -> below-diagram panel; mobile pointer-tap -> sheet.
+// The desktop panel still renders on mobile (cheap, display:none) so the tabs'
+// aria-controls target stays current; the dialog supersedes it visually.
+function renderLineageResponsive(key, data, panel) {
+  renderLineage(key, data, panel);
+  if (fpMobileMQ.matches && fpSheetWanted && fpSheet) {
+    renderLineage(key, data, fpSheetContent);
+    openFpSheet(fpSheetTrigger);
+  }
+  fpSheetWanted = false;
+}
+
 // Wire up the three tab groups
-initTabGroup(document.getElementById('fp-lineage-block'), LINEAGE, renderLineage, document.getElementById('fp-lineage-panel'), 'sem_order_items');
+initTabGroup(document.getElementById('fp-lineage-block'), LINEAGE, renderLineageResponsive, document.getElementById('fp-lineage-panel'), 'sem_order_items');
 initTabGroup(document.getElementById('fp-semantic-toggle'), SEMANTIC_RESULTS, renderSemanticResult, document.getElementById('fp-semantic-panel'), 'region');
 initTabGroup(document.getElementById('fp-playground-list'), PLAYGROUND, renderPlayground, document.getElementById('fp-playground-panel'), 'region');
