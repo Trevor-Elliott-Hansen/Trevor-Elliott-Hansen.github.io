@@ -1247,6 +1247,8 @@ button:focus-visible {
   justify-content: center;
   position: relative;
   padding: 10px 16px;
+  min-height: 52px;
+  flex-shrink: 0;
 }
 
 .fp-sheet-handle {
@@ -1486,9 +1488,13 @@ body.fp-sheet-lock {
     flex: 0 0 auto;
     position: sticky;
     left: 0;
+    z-index: 1;
     background: var(--card);
     padding-right: 8px;
     margin-bottom: 0;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
   }
 
   .fp-node {
