@@ -119,7 +119,8 @@ const spyObserver = new IntersectionObserver(
     const best = visible.reduce((a, b) =>
       a.boundingClientRect.top > b.boundingClientRect.top ? a : b
     );
-    const id = best.target.id;
+    // #governance has no nav link of its own — the "Projects" link covers both
+    const id = best.target.id === 'governance' ? 'project' : best.target.id;
     navLinks.forEach((link) => {
       link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
     });
@@ -163,10 +164,14 @@ function animateCountGroup(rootEl) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   rootEl.querySelectorAll('.count-num').forEach((el) => {
-    const target = parseInt(el.dataset.target, 10) || 0;
+    const target = parseFloat(el.dataset.target) || 0;
+    const decimals = parseInt(el.dataset.decimals, 10) || 0;
     const prefix = el.dataset.prefix || '';
     const suffix = el.dataset.suffix || '';
-    const fmt = (n) => prefix + (n >= 1000 ? n.toLocaleString() : n.toString()) + suffix;
+    const fmt = (n) => {
+      const v = decimals ? n.toFixed(decimals) : Math.round(n);
+      return prefix + (v >= 1000 ? Number(v).toLocaleString() : v.toString()) + suffix;
+    };
 
     if (reduce) {
       el.textContent = fmt(target);
@@ -178,7 +183,7 @@ function animateCountGroup(rootEl) {
     function update(currentTime) {
       const progress = Math.min((currentTime - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = fmt(Math.round(eased * target));
+      el.textContent = fmt(eased * target);
       if (progress < 1) requestAnimationFrame(update);
     }
     requestAnimationFrame(update);
@@ -260,25 +265,15 @@ function fpPillRow(label, items) {
 // ========================================
 const LINEAGE = {
   src_tpch: { name: 'SNOWFLAKE_SAMPLE_DATA.TPCH_SF1', rows: 'read-only share', purpose: 'Snowflake’s TPC-H sample dataset — the raw upstream source declared via dbt sources with freshness and schema tests.', tests: ['source freshness'], downstream: ['staging'] },
-  stg_orders: { name: 'stg_tpch__orders', rows: '1.5M', purpose: 'Order header: 1:1 rename + cast from the raw source. Staging never joins or aggregates.', tests: ['unique', 'not_null'], downstream: ['int_orders_with_line_items', 'fct_orders'] },
-  stg_lineitems: { name: 'stg_tpch__lineitems', rows: '6M', purpose: 'Line items with deterministic derivations: net_revenue, discount_amount, is_returned, days_in_transit.', sql: 'extended_price * (1 - discount_rate) as net_revenue', tests: ['not_null'], downstream: ['int_orders_with_line_items', 'fct_order_items'] },
-  stg_customers: { name: 'stg_tpch__customers', rows: '150K', purpose: 'Customer master rename + cast.', tests: ['unique', 'not_null'], downstream: ['dim_customer'] },
-  stg_suppliers: { name: 'stg_tpch__suppliers', rows: '10K', purpose: 'Supplier master rename + cast.', tests: ['unique', 'not_null'], downstream: ['dim_supplier'] },
-  stg_parts: { name: 'stg_tpch__parts', rows: '200K', purpose: 'Part master with p_type parsed into category / finish / material sub-attributes.', tests: ['unique', 'not_null'], downstream: ['dim_part'] },
-  stg_nations: { name: 'stg_tpch__nations', rows: '25', purpose: 'Nation lookup, used to denormalize geography into dims.', downstream: ['dim_customer', 'dim_supplier'] },
-  stg_regions: { name: 'stg_tpch__regions', rows: '5', purpose: 'Region lookup, the top of the geography rollup.', downstream: ['dim_customer', 'dim_supplier'] },
-  int_orders: { name: 'int_orders_with_line_items', rows: '1.5M', purpose: 'Pre-aggregates line items to order grain so fct_orders can join to dims without fan-out.', sql: 'sum(net_revenue) as order_net_revenue\nfrom stg_tpch__lineitems\ngroup by order_key', tests: ['unique', 'not_null'], downstream: ['fct_orders'] },
-  dim_customer: { name: 'dim_customer', rows: '150K', purpose: 'Conformed customer dimension, denormalized with nation + region. The shared join key for the semantic layer.', tests: ['unique', 'not_null', 'relationships'], downstream: ['fct_orders', 'fct_order_items', 'sem_customers'] },
+  stg_all: { name: 'staging · 7 views', rows: '8M+ total', purpose: 'Seven 1:1 staging views — rename, cast, and deterministic derivations only (net_revenue, is_returned, days_in_transit). No joins, no aggregation; every downstream model refs staging, never raw sources.', sql: 'extended_price * (1 - discount_rate) as net_revenue', tests: ['unique', 'not_null'], downstream: ['intermediate', 'dims'] },
+  int_orders: { name: 'int_orders_with_line_items', rows: '1.5M', purpose: 'Pre-aggregates line items to order grain so fct_orders can join to dims without fan-out — the grain-discipline layer.', sql: 'sum(net_revenue) as order_net_revenue\nfrom stg_tpch__lineitems\ngroup by order_key', tests: ['unique', 'not_null'], downstream: ['fct_orders'] },
+  dim_customer: { name: 'dim_customer', rows: '150K', purpose: 'Conformed customer dimension, denormalized with nation + region. The shared join key for the semantic layer.', tests: ['unique', 'not_null', 'relationships'], downstream: ['facts', 'semantic layer'] },
   dim_supplier: { name: 'dim_supplier', rows: '10K', purpose: 'Conformed supplier dimension, denormalized with nation + region.', tests: ['unique', 'not_null'], downstream: ['fct_order_items'] },
   dim_part: { name: 'dim_part', rows: '200K', purpose: 'Part dimension with parsed type sub-attributes (category / finish / material).', tests: ['unique', 'not_null'], downstream: ['fct_order_items'] },
-  dim_customer_history: { name: 'dim_customer_history', rows: 'variable', purpose: 'SCD Type 2 history with is_current flag and valid_to_or_max for clean point-in-time joins.', sql: 'on o.customer_key = h.customer_key\nand o.order_date >= h.valid_from\nand o.order_date < h.valid_to_or_max', tests: ['one current per key'], downstream: ['point-in-time analysis'] },
+  dim_customer_history: { name: 'dim_customer_history', rows: 'variable', purpose: 'SCD Type 2 history with is_current flag and valid_to_or_max for clean point-in-time joins — see The SCD2 Bug tab for the debugging story.', sql: 'on o.customer_key = h.customer_key\nand o.order_date >= h.valid_from\nand o.order_date < h.valid_to_or_max', tests: ['one current per key'], downstream: ['point-in-time analysis'] },
   fct_orders: { name: 'fct_orders', rows: '1.5M', purpose: 'Fact at order grain — header combined with the pre-aggregated line-item rollup. Answers order-level questions like average order value.', tests: ['unique', 'not_null', 'revenue reconciles'], downstream: ['BI / semantic'] },
-  fct_order_items: { name: 'fct_order_items', rows: '6M', purpose: 'Fact at line-item grain with a dbt_utils surrogate key. Denormalizes order context (customer_key, order_date, status) so most queries need no extra join.', tests: ['unique', 'positive value', 'relationships'], downstream: ['sem_order_items'] },
-  sem_order_items: { name: 'sem_order_items', rows: 'semantic', purpose: 'MetricFlow semantic model over fct_order_items: 9 measures, 7 dimensions, 5 entities (primary order_item; foreign order, customer, supplier, part).', downstream: ['metrics'] },
-  sem_customers: { name: 'sem_customers', rows: 'semantic', purpose: 'Semantic model over dim_customer with customer as the primary entity. The shared entity name is what enables auto-joins.', downstream: ['metrics'] },
-  dim_dates: { name: 'dim_dates', rows: '~15K', purpose: 'Day-grain calendar (1990–2030). Serves as the MetricFlow time spine and a general date dimension.', downstream: ['time-based metrics'] },
-  seed_customer_changes: { name: 'customer_changes_simulated', rows: '10', purpose: 'Current-state seed (one row per customer) that feeds the SCD2 snapshot. Editing a tracked column simulates a real attribute change.', downstream: ['customer_snapshot'] },
-  snap_customer: { name: 'customer_snapshot', rows: 'variable', purpose: 'dbt snapshot using the check strategy over tracked columns. Closes the prior version and opens a new one whenever a tracked column changes.', sql: 'strategy: check\ncheck_cols: [market_segment, account_balance]', downstream: ['dim_customer_history'] }
+  fct_order_items: { name: 'fct_order_items', rows: '6M', purpose: 'Fact at line-item grain with a surrogate key. Denormalizes order context (customer_key, order_date, status) so most queries need no extra join. Converted to incremental by the governed agent in Project 02 — 9,779-row runs instead of 6M.', tests: ['unique', 'positive value', 'relationships'], downstream: ['semantic layer'] },
+  sem_layer: { name: 'MetricFlow semantic layer', rows: '16 metrics', purpose: 'Two semantic models over the facts and dims define 16 version-controlled metrics, joined automatically through shared entities. dim_dates provides the time spine. See the Semantic Layer tab for the live demo.', downstream: ['any BI tool'] }
 };
 
 function renderLineage(key, data, panel) {
@@ -329,43 +324,6 @@ function renderSemanticResult(key, data, panel) {
   panel.innerHTML = '<table class="fp-result-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
 }
 
-const PLAYGROUND = {
-  region: {
-    sql: 'select\n    c.region_name,\n    sum(oi.net_revenue) as net_revenue\nfrom fct_order_items oi\njoin dim_customer c using (customer_key)\ngroup by 1\norder by 2 desc;',
-    models: ['fct_order_items', 'dim_customer'],
-    metrics: ['total_net_revenue'],
-    concept: 'Conformed dimension: region rolls up customer → nation → region, joined once and reused everywhere.'
-  },
-  top_customers: {
-    sql: 'select\n    c.customer_key,\n    c.market_segment,\n    sum(oi.net_revenue) as net_revenue\nfrom fct_order_items oi\njoin dim_customer c using (customer_key)\ngroup by 1, 2\norder by net_revenue desc\nlimit 10;',
-    models: ['fct_order_items', 'dim_customer'],
-    metrics: ['total_net_revenue'],
-    concept: 'Line-item grain fact carries customer_key directly — no detour through fct_orders needed.'
-  },
-  return_rate: {
-    sql: 'select\n    p.category,\n    count_if(oi.is_returned) * 100.0\n      / nullif(count(*), 0) as return_rate_pct\nfrom fct_order_items oi\njoin dim_part p using (part_key)\ngroup by 1\norder by return_rate_pct desc;',
-    models: ['fct_order_items', 'dim_part'],
-    metrics: ['return_rate', 'line_item_count', 'returned_item_count'],
-    concept: 'Derived metric: return_rate = returned_item_count / line_item_count, sliced by a parsed part attribute.'
-  },
-  segment_history: {
-    sql: 'select\n    h.market_segment,\n    sum(o.net_revenue) as revenue\nfrom fct_orders o\njoin dim_customer_history h\n  on o.customer_key = h.customer_key\n  and o.order_date >= h.valid_from\n  and o.order_date < h.valid_to_or_max\ngroup by 1;',
-    models: ['fct_orders', 'dim_customer_history'],
-    metrics: ['total_net_revenue'],
-    concept: 'SCD Type 2 point-in-time join: attributes revenue to the segment the customer was in when the order was placed, not their segment today.'
-  }
-};
-
-function renderPlayground(key, data, panel) {
-  const d = data[key];
-  if (!d) return;
-  panel.innerHTML =
-    '<pre><code>' + fpEsc(d.sql) + '</code></pre>' +
-    fpPillRow('Models', d.models) +
-    fpPillRow('Metrics', d.metrics) +
-    '<p class="fp-concept">' + fpEsc(d.concept) + '</p>';
-}
-
 // ========================================
 // ANALYTICS — CTA click events (GA4)
 // ========================================
@@ -381,7 +339,8 @@ function trackCta(selector, eventName) {
 
 trackCta('.hero-chip', 'hero_chip_click');
 trackCta('.hero-buttons a[href="#project"]', 'hero_project_cta_click');
-trackCta('.fp-cta a', 'github_repo_click');
+trackCta('#project .fp-cta a', 'github_repo_click');
+trackCta('#governance .fp-cta a', 'governance_repo_click');
 trackCta('a[href*="linkedin.com"]', 'linkedin_click');
 trackCta('#contact a[href^="mailto"]', 'email_click');
 
@@ -437,37 +396,129 @@ if (fpSheet) {
   });
 }
 
-// Capture-phase delegated listener: records the trigger BEFORE the tab's own
-// click handler runs select() -> renderFn, and fires the GA engagement event.
-const fpLineageBlock = document.getElementById('fp-lineage-block');
-if (fpLineageBlock) {
-  fpLineageBlock.addEventListener('click', (e) => {
-    const btn = e.target.closest('.fp-node');
-    if (!btn) return;
-    fpSheetWanted = true;
-    fpSheetTrigger = btn;
-    if (typeof gtag === 'function') {
-      gtag('event', 'fp_node_click', {
-        model_key: btn.dataset.fpKey,
-        model_name: btn.textContent.trim()
-      });
-    }
-  }, true);
-}
-
-// Render wrapper: desktop -> below-diagram panel; mobile pointer-tap -> sheet.
-// The desktop panel still renders on mobile (cheap, display:none) so the tabs'
-// aria-controls target stays current; the dialog supersedes it visually.
-function renderLineageResponsive(key, data, panel) {
-  renderLineage(key, data, panel);
-  if (fpMobileMQ.matches && fpSheetWanted && fpSheet) {
-    renderLineage(key, data, fpSheetContent);
-    openFpSheet(fpSheetTrigger);
+// Capture-phase delegated listener (document-level, serves every .fp-node
+// tab group): records the trigger BEFORE the tab's own click handler runs
+// select() -> renderFn, and fires the GA engagement event with the owning
+// section as the project discriminator.
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest ? e.target.closest('.fp-node') : null;
+  if (!btn) return;
+  fpSheetWanted = true;
+  fpSheetTrigger = btn;
+  if (typeof gtag === 'function') {
+    const section = btn.closest('section[id]');
+    gtag('event', 'fp_node_click', {
+      model_key: btn.dataset.fpKey,
+      model_name: btn.textContent.trim(),
+      project: section ? section.id : ''
+    });
   }
-  fpSheetWanted = false;
+}, true);
+
+// Render-wrapper factory: desktop -> the block's own panel; mobile pointer-tap
+// -> the shared bottom sheet. The desktop panel still renders on mobile
+// (cheap, display:none) so the tabs' aria-controls target stays current;
+// the dialog supersedes it visually.
+function withMobileSheet(renderFn) {
+  return function (key, data, panel) {
+    renderFn(key, data, panel);
+    if (fpMobileMQ.matches && fpSheetWanted && fpSheet) {
+      renderFn(key, data, fpSheetContent);
+      openFpSheet(fpSheetTrigger);
+    }
+    fpSheetWanted = false;
+  };
 }
 
-// Wire up the three tab groups
-initTabGroup(document.getElementById('fp-lineage-block'), LINEAGE, renderLineageResponsive, document.getElementById('fp-lineage-panel'), 'sem_order_items');
+// ========================================
+// PROJECT 02 — governance stack data + renderer
+// ========================================
+const GOVSTACK = {
+  env: {
+    name: '01 · Environment & Spend',
+    artifact: 'setup/setup.sql · setup/ci_user.sql',
+    purpose: 'Cost caps and role scoping armed before the agent got its first token: a 50-credit resource monitor with hard suspend, per-user daily CoCo credit limits, least-privilege TRANSFORMER role, MFA for humans and RSA key-pair auth for the machine.',
+    proof: { src: 'assets/proof-resource-monitor.png', w: 1560, h: 652, alt: 'Snowsight resource monitor showing 1.36 of 50 credits used', caption: 'Live proof — the entire project ran on 1.36 of 50 capped credits' },
+    tests: ['50-credit hard cap', '5 credits/day per user', 'key-pair service auth']
+  },
+  advice: {
+    name: '02 · Advice',
+    artifact: 'AGENTS.md',
+    purpose: 'Conventions and architectural intent the agent reads: naming taxonomy, the semantic-layer rule (never materialize what MetricFlow already answers), verify-don’t-declare. Written FROM the ungoverned baseline’s failures, the way real org conventions evolve.',
+    tests: ['refused semantic-layer duplication', 'self-verified with dbt build']
+  },
+  runbook: {
+    name: '03 · Runbook',
+    artifact: '.cortex/plugins/tpch-conventions/skills/add-staging-model/',
+    purpose: 'A five-phase gated workflow (preconditions → model → docs/tests → verify → report) the agent executes rather than improvises. First live run: a clean-sweep composite-PK staging model whose self-reported numbers matched independent re-verification exactly.',
+    tests: ['8/8 build', '5/5 source tests', 'lint clean']
+  },
+  enforce: {
+    name: '04 · Enforcement',
+    artifact: '.cortex/plugins/tpch-conventions/hooks/guardrails.sh',
+    purpose: 'A PreToolUse hook inspects every command before execution: no prod targets, no stateful snapshot runs, no destructive DDL outside dev schemas, no warehouse or spend changes. Deterministic blocks the agent cannot talk past — see the pressure test below.',
+    proof: { src: 'assets/proof-hook-block.png', w: 882, h: 1624, alt: 'CoCo Desktop session where the guardrail hook blocks dbt snapshot --help', caption: 'Live capture — the hook firing on a harmless-looking command' },
+    tests: ['11 simulated commands: 6 block, 5 pass']
+  },
+  review: {
+    name: '05 · Scoped Review',
+    artifact: '.cortex/plugins/tpch-conventions/agents/dbt-reviewer.md',
+    purpose: 'A read-only reviewer whose least-privilege is structural — a tool allowlist (read/grep/glob), not prompt promises. Against 8 planted defects: 7 caught, 0 false positives. The one miss (a silent deletion) produced the design rule: reviewers need diffs as input, not git as a capability.',
+    tests: ['7/8 defects caught', '0 false positives', 'fails closed']
+  },
+  shipped: {
+    name: 'Shipped: plugin → catalog → CI',
+    artifact: '.cortex/plugins/tpch-conventions/ → CORTEX EXTENSION',
+    purpose: 'All five layers ship as one versioned plugin, published to Snowflake’s catalog with READ granted only to the TRANSFORMER role — agent tooling governed by the same RBAC as the data. The same reviewer then runs headless in CI on every PR under a service identity with a role-restricted expiring token. Its first act was reviewing the PR that created it.',
+    proof: { src: 'assets/proof-rbac-grants.png', w: 1314, h: 706, alt: 'Snowsight grants on the CORTEX EXTENSION: OWNERSHIP to ADMIN, READ to TRANSFORMER role', caption: 'Live proof — OWNERSHIP to admin, READ scoped to the TRANSFORMER role' },
+    tests: ['deliberately not PUBLIC', 'a human merges; the agent informs']
+  }
+};
+
+function renderGovLayer(key, data, panel) {
+  const d = data[key];
+  if (!d) { panel.innerHTML = ''; return; }
+  const proof = d.proof
+    ? '<figure class="fp-proof"><img src="' + d.proof.src + '" alt="' + fpEsc(d.proof.alt) + '" width="' + d.proof.w + '" height="' + d.proof.h + '" loading="lazy"><figcaption class="fp-proof-caption">' + fpEsc(d.proof.caption) + '</figcaption></figure>'
+    : '';
+  panel.innerHTML =
+    '<div class="fp-detail-head"><span class="fp-detail-name">' + fpEsc(d.name) + '</span></div>' +
+    '<div class="fp-detail-row"><span class="fp-detail-label">Artifact</span><div class="fp-pill-row"><span class="pill">' + fpEsc(d.artifact) + '</span></div></div>' +
+    '<p class="fp-detail-purpose" style="margin-top:12px">' + fpEsc(d.purpose) + '</p>' +
+    fpPillRow('Proven', d.tests) +
+    proof;
+}
+
+// ========================================
+// EXPLORER — one tabbed block per project
+// ========================================
+function initExplorer(tabsEl) {
+  const tabs = Array.from(tabsEl.querySelectorAll('.fp-etab'));
+  if (!tabs.length) return;
+  const blockEl = tabsEl.parentElement;
+  const panels = tabs.map((t) => blockEl.querySelector('#' + t.dataset.etab));
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t, j) => {
+        const sel = t === tab;
+        t.setAttribute('aria-selected', sel ? 'true' : 'false');
+        if (panels[j]) panels[j].hidden = !sel;
+      });
+      if (typeof gtag === 'function') {
+        const section = tabsEl.closest('section[id]');
+        gtag('event', 'fp_tab_view', {
+          tab: tab.dataset.etab,
+          project: section ? section.id : ''
+        });
+      }
+    });
+  });
+}
+
+document.querySelectorAll('.fp-explorer-tabs').forEach(initExplorer);
+
+// Wire up the tab groups
+initTabGroup(document.getElementById('fp-lineage-block'), LINEAGE, withMobileSheet(renderLineage), document.getElementById('fp-lineage-panel'), 'fct_order_items');
 initTabGroup(document.getElementById('fp-semantic-toggle'), SEMANTIC_RESULTS, renderSemanticResult, document.getElementById('fp-semantic-panel'), 'region');
-initTabGroup(document.getElementById('fp-playground-list'), PLAYGROUND, renderPlayground, document.getElementById('fp-playground-panel'), 'region');
+initTabGroup(document.getElementById('gv-stack-block'), GOVSTACK, withMobileSheet(renderGovLayer), document.getElementById('gv-stack-panel'), 'env');
